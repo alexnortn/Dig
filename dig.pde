@@ -8,48 +8,65 @@
 
 ArrayList<Square> _squares = new ArrayList<Square>();
 int[] dig = { 210,213,227,230,245,246,278,280,281,313,314,329,332,346,348,349 };
-int _square_size;
-
+int _square_size,
+	_rows,
+	_cols;
+float _xoff = random(1);
+float _yoff = random(1);
+float _theta;
+float _threshold;
 
 
 void setup() {
 	size(1024, 512); // Keep ratio consistent (2:1) prefferably powers of 2
+	frameRate(30);
+
+	_theta = 0;
+	_threshold = 0;
 
 	_square_size = int(pow(2, 5)); // 2s
 	println(dig.length);
 
-	int gridX = int(width / _square_size) + 1; // Add (1) to get perfect center!
-	int gridY = int(height / _square_size) + 2; // Add (1) to get symmetry
+	_cols = int(width / _square_size) + 1; // Add (1) to get perfect center!
+	_rows = int(height / _square_size) + 2; // Add (1) to get symmetry
 
-	generate_squares(gridX, gridY, _square_size);
+	generate_noise(_rows, _cols, _square_size);
 }
 
 void draw() {
 	background(255);
 
+	// update_noise(_rows, _cols);
+	transition();
 	render_squares();	
+	// center_point();
+	
+}
 
+void center_point() {
 	// Center Point
 	pushMatrix();
 		fill(255,0,0);
 		noStroke();
 		ellipse(width/2,height/2,5,5);
 	popMatrix();
-	
 }
 
-void generate_squares(int gridX, int gridY, int _square_size) {
+void generate_checker(int _rows, int _cols, int _square_size) {
 	boolean state = true;
 	int index = 0;
 	float offset = _square_size/2;
 
-	for (int i = 0; i < gridX; i++) {
-		for (int j = 0; j < gridY; j++) {
+	_squares.clear(); // Empty our ArrayList each time
+
+	for (int i = 0; i < _rows; i++) {
+		for (int j = 0; j < _cols; j++) {
 			PVector loc = new PVector(); // All pointing at same ref. Vec
 			loc.x = i * _square_size - offset;
 			loc.y = j * _square_size - offset;
+
 			_squares.add(
-				new Square(loc, state, _square_size, index)
+				new Square(loc, state, _square_size, offset, index)
 			);
 
 			// Clean Up extra Y row (for symmetry)
@@ -72,6 +89,121 @@ void generate_squares(int gridX, int gridY, int _square_size) {
 
 	println(_squares.size());
 	
+}
+
+void generate_noise(int _rows, int _cols, int _square_size) {
+	boolean state = true;
+	int index = 0;
+	float offset = _square_size/2;
+	float step = 0.8;
+
+	_squares.clear(); // Empty our ArrayList each time
+
+	for (int i = 0; i < _cols; i++) {
+		for (int j = 0; j < _rows; j++) {
+
+			PVector loc = new PVector(); // All pointing at same ref. Vec
+			loc.x = i * _square_size - offset;
+			loc.y = j * _square_size - offset;
+
+			// float theta = map(noise(_xoff, _yoff), 0, 1, 0, TWO_PI);
+			// float value = sin(theta);
+			float value = noise(_xoff, _yoff);
+
+			_squares.add(
+				new Square(loc, state, _square_size, value, index)
+			);
+
+			// Clean Up extra Y row (for symmetry)
+			Square square_test = _squares.get(index);
+				if (square_test._loc.y > height) {
+					_squares.remove(index);
+					index--;
+				} 
+			
+			index++;
+
+			if (value > 0.5) {
+				// state = !state; // Flip Color (extendable control)
+			} 
+
+			_yoff += step;
+		}
+		_yoff = 0;
+		_xoff += step;
+	}
+
+	println(_squares.size());
+	println(index);
+	
+}
+
+void update_noise(int _rows, int _cols) {
+	int index = 0;
+	float step = 0.1;
+
+	for (int i = 0; i < _cols; i++) {
+		for (int j = 0; j < _rows; j++) {
+
+			if (index < _squares.size() -1) index++;
+
+			Square square = _squares.get(index); // Get Square;
+
+			float value = noise(_xoff, _yoff);
+
+			if (value > 0.5) {
+				square._state = !square._state; // Flip Color (extendable control)
+			} 
+
+			_yoff += step;
+		}
+
+		_yoff = 0;
+		_xoff += step;
+	}	
+}
+
+boolean two_random() {
+	boolean flip = false;
+	float rand_fill, rand_density;
+
+	rand_fill = random(1);
+	rand_density = random(0.25, 2);
+
+	if (rand_fill > rand_density) {
+		flip = true;
+	} 
+
+	return flip;
+}
+
+void transition() {
+	float step = 0.001;
+
+	// _theta += step + _theta / 10;  // Fast
+	_theta += step;  // Slow
+	_threshold = abs(sin(_theta));
+
+	for (Square square : _squares) {
+
+		for (int i = 0; i < dig.length; i++) { // Slowly reveal DiG
+			if (square._index == dig[i]) {
+				if (random(1) < _threshold) {
+					square.set_black();
+					square._done = true;
+				}
+			}
+		}
+
+		if (square._done) {
+			continue;
+		}
+
+		if (square._intensity < _threshold) { // Slowly turn squares white
+			square.set_white();
+			square._done = true;
+		} 
+	}
 }
 
 void render_squares() {
@@ -111,10 +243,15 @@ void mousePressed() {
 
 void keyPressed() {
 	if (keyCode == TAB) { // Tab
-		println("Set reset for squares");
+		println("Reset Checkers");
 		for (Square square : _squares) {
 			square.reset_state();
 		}
+	}
+
+	if (keyCode == SHIFT) { // Shift
+		println("Reset");
+		setup();
 	}
 
 	if (keyCode == 32) { // Space
@@ -172,16 +309,19 @@ class Square {
 	color _c;
 	int _size;
 	int _index;
+	float _intensity;
 	boolean _state = true;
 	boolean _init_state = true;
-	boolean _stroke = true;
+	boolean _stroke = false;
+	boolean _done = false;
 	PVector _loc;
 
-	Square (PVector loc, boolean state, int size, int index) {
+	Square (PVector loc, boolean state, int size, float intensity, int index) {
 		_init_state = state;
 		_state = state;
 		_loc = loc;
 		_size = size;
+		_intensity = intensity;
 		_index = index;
 	}
 

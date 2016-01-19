@@ -178,11 +178,17 @@ boolean two_random() {
 }
 
 void transition() {
-	float step = 0.001;
+	float step = 0.005;
 
 	// _theta += step + _theta / 10;  // Fast
 	_theta += step;  // Slow
-	_threshold = abs(sin(_theta));
+	_threshold = 2 * abs(sin(_theta));
+
+	if (_threshold > 0.9) {
+		println("noLoop");
+		noLoop();
+		return;
+	}
 
 	for (Square square : _squares) {
 
@@ -251,6 +257,7 @@ void keyPressed() {
 
 	if (keyCode == SHIFT) { // Shift
 		println("Reset");
+		loop();
 		setup();
 	}
 

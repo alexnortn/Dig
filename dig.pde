@@ -7,6 +7,7 @@
 */
 
 ArrayList<Square> _squares = new ArrayList<Square>();
+int[] dig = { 210,213,227,230,245,246,278,280,281,313,314,329,332,346,348,349 };
 int _square_size;
 
 
@@ -15,19 +16,23 @@ void setup() {
 	size(1024, 512); // Keep ratio consistent (2:1) prefferably powers of 2
 
 	_square_size = int(pow(2, 5)); // 2s
+	println(dig.length);
 
-	int gridX = int(width / _square_size);
-	int gridY = int(height / _square_size);
+	int gridX = int(width / _square_size) + 1; // Add (1) to get perfect center!
+	int gridY = int(height / _square_size) + 2; // Add (1) to get symmetry
 
 	generate_squares(gridX, gridY, _square_size);
 }
 
 void draw() {
 	background(255);
-	render_squares();
 
+	render_squares();	
+
+	// Center Point
 	pushMatrix();
 		fill(255,0,0);
+		noStroke();
 		ellipse(width/2,height/2,5,5);
 	popMatrix();
 	
@@ -36,28 +41,37 @@ void draw() {
 void generate_squares(int gridX, int gridY, int _square_size) {
 	boolean state = true;
 	int index = 0;
+	float offset = _square_size/2;
 
 	for (int i = 0; i < gridX; i++) {
 		for (int j = 0; j < gridY; j++) {
 			PVector loc = new PVector(); // All pointing at same ref. Vec
-			loc.x = i * _square_size;
-			loc.y = j * _square_size;
+			loc.x = i * _square_size - offset;
+			loc.y = j * _square_size - offset;
 			_squares.add(
 				new Square(loc, state, _square_size, index)
 			);
+
+			// Clean Up extra Y row (for symmetry)
+			Square square_test = _squares.get(index);
+				if (square_test._loc.y > height) {
+					_squares.remove(index);
+					index--;
+				} 
 			
 			index++;
-			state = !state; // Flip color
+			if (j % 1 == 0) {
+				state = !state; // Flip Color (extendable control)
+			} 
 		}
 
-		state = !state; // Flip color
+		if (i % 1 == 0) {
+			state = !state; // Flip Color (extendable control)
+		}
 	}
 
 	println(_squares.size());
 	
-	for(Square square : _squares) {
-		println(square._loc);
-	}
 }
 
 void render_squares() {
@@ -96,31 +110,60 @@ void mousePressed() {
 }
 
 void keyPressed() {
-	if (keyCode == TAB) {
+	if (keyCode == TAB) { // Tab
 		println("Set reset for squares");
 		for (Square square : _squares) {
 			square.reset_state();
 		}
 	}
 
-	if (keyCode == 48) {
+	if (keyCode == 32) { // Space
+		println("Log DiG array");
+		for (Square square : _squares) {
+			if (square._state) {
+				println(square._index);
+			}
+		}
+	}
+
+	if (keyCode == 48) { // 0
 		println("Set squares white");
 		for (Square square : _squares) {
 			square.set_white();
 		}
 	}
 
-	if (keyCode == 49) {
+	if (keyCode == 49) { // 1
 		println("Set squares black");
 		for (Square square : _squares) {
 			square.set_black();
 		}
 	}
 
-	if (keyCode == 50) {
+	if (keyCode == 50) { // 2
 		println("Toggle stroke");
 		for (Square square : _squares) {
 			square.toggle_stroke();
+		}
+	}
+
+	if (keyCode == 51) { // 3
+		println("Invert");
+		for (Square square : _squares) {
+			square.toggle_state();
+		}
+	}
+
+	if (keyCode == 53) { // 5
+		println("DiG");
+		for (Square square : _squares) {
+			square.set_white();
+			
+			for (int i = 0; i < dig.length; i++) {
+				if (square._index == dig[i]) {
+					square.set_black();
+				}
+			}
 		}
 	}
 }
@@ -152,7 +195,7 @@ class Square {
 		}
 
 		fill(_c);
-		
+
 		if (_stroke) {	
 			stroke(0);
 			strokeWeight(1);

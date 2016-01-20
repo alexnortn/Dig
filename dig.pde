@@ -6,6 +6,8 @@
 	2016
 */
 
+import processing.pdf.*;
+
 ArrayList<Square> _squares = new ArrayList<Square>();
 int[] dig = { 210,213,227,230,245,246,278,280,281,313,314,329,332,346,348,349 };
 int _square_size,
@@ -28,7 +30,7 @@ void setup() {
 	println(dig.length);
 
 	_cols = int(width / _square_size) + 1; // Add (1) to get perfect center!
-	_rows = int(height / _square_size) + 2; // Add (1) to get symmetry
+	_rows = int(height / _square_size) + 1; // Add (1) to get symmetry
 
 	generate_noise(_rows, _cols, _square_size);
 }
@@ -37,10 +39,23 @@ void draw() {
 	background(255);
 
 	// update_noise(_rows, _cols);
+
+	// saveVector();
 	transition();
-	render_squares();	
-	// center_point();
+	render_squares();
 	
+	// center_point();
+
+	// saveFrame("dig2-######.tga");
+	
+}
+
+void saveVector() {
+	PGraphics tmp = null;
+	tmp = beginRecord(PDF, frameCount + ".pdf");
+		transition();
+		render_squares();
+	endRecord();
 }
 
 void center_point() {
@@ -63,7 +78,7 @@ void generate_checker(int _rows, int _cols, int _square_size) {
 		for (int j = 0; j < _cols; j++) {
 			PVector loc = new PVector(); // All pointing at same ref. Vec
 			loc.x = i * _square_size - offset;
-			loc.y = j * _square_size - offset;
+			loc.y = j * _square_size;
 
 			_squares.add(
 				new Square(loc, state, _square_size, offset, index)
@@ -104,7 +119,7 @@ void generate_noise(int _rows, int _cols, int _square_size) {
 
 			PVector loc = new PVector(); // All pointing at same ref. Vec
 			loc.x = i * _square_size - offset;
-			loc.y = j * _square_size - offset;
+			loc.y = j * _square_size;
 
 			// float theta = map(noise(_xoff, _yoff), 0, 1, 0, TWO_PI);
 			// float value = sin(theta);
@@ -185,8 +200,8 @@ void transition() {
 	_threshold = 2 * abs(sin(_theta));
 
 	if (_threshold > 0.9) {
-		println("noLoop");
-		noLoop();
+		// println("noLoop");
+		// noLoop();
 		return;
 	}
 
@@ -309,6 +324,11 @@ void keyPressed() {
 				}
 			}
 		}
+	}
+
+	if (keyCode == 54) { // 6
+		println("Save");
+		saveVector();
 	}
 }
 

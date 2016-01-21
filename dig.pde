@@ -7,6 +7,7 @@
 */
 
 import processing.pdf.*;
+import java.io.File; // Make Directory
 
 ArrayList<Square> _squares = new ArrayList<Square>();
 // Array of Squares to paint for DiG
@@ -34,12 +35,12 @@ void setup() {
 	frameRate(15);
 
 	exit_check();
-
+  
 	_counter++;
 
 	_theta = 0;
 	_threshold = 0;
-	_threshold_gen = random(1);
+	_threshold_gen = random(0.4,0.6);
 
 	println("Threshold: " + _threshold_gen);
 
@@ -50,7 +51,6 @@ void setup() {
 
 	generate_noise(_rows, _cols, _square_size);
 	delta_threshold(0);
-	delta_threshold(random(0.25,0.75));
 }
 
 void draw() {
@@ -58,9 +58,19 @@ void draw() {
 
 	// update_noise(_rows, _cols);
 
-	saveVector();
 	// transition();
 	// render_squares();
+
+	// Render our Permutations of each noise field
+	saveVector(random(0.4,0.45));
+	saveVector(random(0.45,0.5));
+	saveVector(random(0.5,0.55));
+	saveVector(random(0.55,0.6));
+	saveVector(random(0.6,0.65));
+	saveVector(random(0.65,0.7));
+
+	// Generate new noise
+	setup();
 	
 	// center_point();
 
@@ -69,15 +79,22 @@ void draw() {
 }
 
 void exit_check() {
-	if (_counter >= 250) exit();
+	if (_counter >= 25) exit();
 }
 
-void saveVector() {
+void saveVector(float threshold) {
 	PGraphics tmp = null;
-	tmp = beginRecord(PDF, _counter + "_" + "DiG" + ".pdf");
+	float thresh = round(threshold * 100);
+	tmp = beginRecord(PDF, _counter + "_" + "DiG_0." + thresh + ".pdf");
+		delta_threshold(threshold);
 		render_squares();
-		setup();
-		// transition();
+	endRecord();
+}
+
+void saveVector_simple() {
+	PGraphics tmp = null;
+	tmp = beginRecord(PDF, _counter + "_" + "DiG_0." + ".pdf");
+		render_squares();
 	endRecord();
 }
 
@@ -389,7 +406,7 @@ void keyPressed() {
 
 	if (keyCode == 54) { // 6
 		println("Save");
-		saveVector();
+		saveVector_simple();
 	}
 }
 

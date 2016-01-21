@@ -13,21 +13,29 @@ int[] dig = { 210,213,227,230,245,246,278,280,281,313,314,329,332,346,348,349 };
 int _square_size,
 	_rows,
 	_cols;
+int _counter = 0;
 float _xoff = random(1);
 float _yoff = random(1);
-float _theta;
-float _threshold;
+float _theta,
+	  _threshold_gen,
+	  _threshold;
 
 
 void setup() {
 	size(1024, 512); // Keep ratio consistent (2:1) prefferably powers of 2
-	frameRate(30);
+	frameRate(15);
+
+	exit_check();
+
+	_counter++;
 
 	_theta = 0;
 	_threshold = 0;
+	_threshold_gen = random(1);
+
+	println("Threshold: " + _threshold_gen);
 
 	_square_size = int(pow(2, 5)); // 2s
-	println(dig.length);
 
 	_cols = int(width / _square_size) + 1; // Add (1) to get perfect center!
 	_rows = int(height / _square_size) + 1; // Add (1) to get symmetry
@@ -41,7 +49,7 @@ void draw() {
 	// update_noise(_rows, _cols);
 
 	// saveVector();
-	transition();
+	// transition();
 	render_squares();
 	
 	// center_point();
@@ -50,11 +58,15 @@ void draw() {
 	
 }
 
+void exit_check() {
+	if (_counter >= 25) exit();
+}
+
 void saveVector() {
 	PGraphics tmp = null;
-	tmp = beginRecord(PDF, frameCount + ".pdf");
-		transition();
+	tmp = beginRecord(PDF, _counter + "_" + frameCount + ".pdf");
 		render_squares();
+		transition();
 	endRecord();
 }
 
@@ -100,10 +112,7 @@ void generate_checker(int _rows, int _cols, int _square_size) {
 		if (i % 1 == 0) {
 			state = !state; // Flip Color (extendable control)
 		}
-	}
-
-	println(_squares.size());
-	
+	}	
 }
 
 void generate_noise(int _rows, int _cols, int _square_size) {
@@ -138,19 +147,15 @@ void generate_noise(int _rows, int _cols, int _square_size) {
 			
 			index++;
 
-			if (value > 0.5) {
-				// state = !state; // Flip Color (extendable control)
+			if (value > _threshold_gen) {
+				state = !state; // Flip Color (extendable control) 
 			} 
 
 			_yoff += step;
 		}
 		_yoff = 0;
 		_xoff += step;
-	}
-
-	println(_squares.size());
-	println(index);
-	
+	}	
 }
 
 void update_noise(int _rows, int _cols) {
@@ -202,6 +207,7 @@ void transition() {
 	if (_threshold > 0.9) {
 		// println("noLoop");
 		// noLoop();
+		setup(); // Reset Sketch
 		return;
 	}
 
@@ -227,6 +233,33 @@ void transition() {
 	}
 }
 
+void delta_threshold(float delta_t) {
+
+	float _delta_t = map(delta_t, 0, width, 0, 1); // Mouse control + norm threshold value
+	println("Threshold " + _delta_t);
+
+	for (Square square : _squares) {
+
+		if (square._done) {
+			continue;
+		}
+
+		for (int i = 0; i < dig.length; i++) { // Reveal DiG
+			if (square._index == dig[i]) {
+				square.set_black();
+				square._done = true;
+			}
+		}
+
+		if (square._intensity < _delta_t) { // Slowly turn squares white
+			square.set_white();
+		} 
+		else {
+			square.set_black();
+		}
+	}
+}
+
 void render_squares() {
 	for (Square square : _squares) {
 		square.render();
@@ -234,7 +267,7 @@ void render_squares() {
 	}
 }
 
-void mouseDragged() {
+void multi_paint() {
 	int x,y;
 	for (Square square : _squares) {
 		x = int(square._loc.x);
@@ -246,6 +279,10 @@ void mouseDragged() {
 			}
 		}
 	}
+}
+
+void mouseDragged() {
+	delta_threshold(mouseX);
 }
 
 void mousePressed() {

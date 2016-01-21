@@ -9,7 +9,15 @@
 import processing.pdf.*;
 
 ArrayList<Square> _squares = new ArrayList<Square>();
-int[] dig = { 210,213,227,230,245,246,278,280,281,313,314,329,332,346,348,349 };
+// Array of Squares to paint for DiG
+int[] dig =       { 210,213,227,230,245,246,278,280,281,313,314,329,332,346,348,349 };
+// Array of space surround DiG to avoid
+int[] dig_space = { 175,176,177,178,179,180,191,192,193,194,195,196,197,198,208,209,
+					210,211,212,213,214,215,225,226,227,228,229,230,231,232,242,243,
+					244,245,246,247,248,249,260,261,262,263,264,265,276,277,278,279,
+					280,281,282,283,294,295,296,297,298,299,310,311,312,313,314,315,
+					316,317,327,328,329,330,331,332,333,334,344,345,346,347,348,349,
+					350,351,361,362,363,364,365,366,367,368,379,380,381,382,383,384 };
 int _square_size,
 	_rows,
 	_cols;
@@ -41,6 +49,8 @@ void setup() {
 	_rows = int(height / _square_size) + 1; // Add (1) to get symmetry
 
 	generate_noise(_rows, _cols, _square_size);
+	delta_threshold(0);
+	delta_threshold(random(0.25,0.75));
 }
 
 void draw() {
@@ -48,9 +58,9 @@ void draw() {
 
 	// update_noise(_rows, _cols);
 
-	// saveVector();
+	saveVector();
 	// transition();
-	render_squares();
+	// render_squares();
 	
 	// center_point();
 
@@ -59,14 +69,15 @@ void draw() {
 }
 
 void exit_check() {
-	if (_counter >= 25) exit();
+	if (_counter >= 250) exit();
 }
 
 void saveVector() {
 	PGraphics tmp = null;
-	tmp = beginRecord(PDF, _counter + "_" + frameCount + ".pdf");
+	tmp = beginRecord(PDF, _counter + "_" + "DiG" + ".pdf");
 		render_squares();
-		transition();
+		setup();
+		// transition();
 	endRecord();
 }
 
@@ -235,7 +246,7 @@ void transition() {
 
 void delta_threshold(float delta_t) {
 
-	float _delta_t = map(delta_t, 0, width, 0, 1); // Mouse control + norm threshold value
+	float _delta_t = delta_t;
 	println("Threshold " + _delta_t);
 
 	for (Square square : _squares) {
@@ -248,13 +259,21 @@ void delta_threshold(float delta_t) {
 			if (square._index == dig[i]) {
 				square.set_black();
 				square._done = true;
+				println("DIG");
+			}
+		}
+
+		for (int i = 0; i < dig_space.length; i++) { // Create space around DiG
+			if ((square._index == dig_space[i]) && (!square._done)) {
+				square.set_white();
+				square._done = true;
 			}
 		}
 
 		if (square._intensity < _delta_t) { // Slowly turn squares white
 			square.set_white();
 		} 
-		else {
+		else if (!square._done) {
 			square.set_black();
 		}
 	}
@@ -264,6 +283,20 @@ void render_squares() {
 	for (Square square : _squares) {
 		square.render();
 		// println(square._loc);
+	}
+}
+
+void paint() {
+	int x,y;
+	for (Square square : _squares) {
+		x = int(square._loc.x);
+		y = int(square._loc.y);
+		if ((mouseX > x) && (mouseX < x + _square_size)) {
+			if ((mouseY > y) && (mouseY < y + _square_size)) {
+				println(square._loc + " " + square._index);
+				square.toggle_state();
+			}
+		}
 	}
 }
 
@@ -282,21 +315,12 @@ void multi_paint() {
 }
 
 void mouseDragged() {
-	delta_threshold(mouseX);
+	float delta_t = map(mouseX, 0, width, 0, 1); // Mouse control + norm threshold value
+	delta_threshold(delta_t);
 }
 
 void mousePressed() {
-	int x,y;
-	for (Square square : _squares) {
-		x = int(square._loc.x);
-		y = int(square._loc.y);
-		if ((mouseX > x) && (mouseX < x + _square_size)) {
-			if ((mouseY > y) && (mouseY < y + _square_size)) {
-				println(square._loc + " " + square._index);
-				square.toggle_state();
-			}
-		}
-	}
+	// paint();
 }
 
 void keyPressed() {

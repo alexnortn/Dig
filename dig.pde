@@ -51,6 +51,7 @@ void setup() {
 
 	generate_noise(_rows, _cols, _square_size);
 	delta_threshold(0);
+	delta_threshold(0.5);
 }
 
 void draw() {
@@ -59,18 +60,19 @@ void draw() {
 	// update_noise(_rows, _cols);
 
 	// transition();
-	// render_squares();
+	render_squares();
 
 	// Render our Permutations of each noise field
-	saveVector(random(0.4,0.45));
-	saveVector(random(0.45,0.5));
-	saveVector(random(0.5,0.55));
-	saveVector(random(0.55,0.6));
-	saveVector(random(0.6,0.65));
-	saveVector(random(0.65,0.7));
+	// saveVector(random(0.4,0.45));
+	// saveVector(random(0.45,0.5));
+	// saveVector(random(0.5,0.55));
+	// saveVector(random(0.55,0.6));
+	// saveVector(random(0.6,0.65));
+	// saveVector(random(0.65,0.7));
 
+	// saveVector(0.5);
 	// Generate new noise
-	setup();
+	// setup();
 	
 	// center_point();
 
@@ -331,7 +333,7 @@ void multi_paint() {
 	}
 }
 
-void mouseDragged() {
+void mouseMoved() {
 	float delta_t = map(mouseX, 0, width, 0, 1); // Mouse control + norm threshold value
 	delta_threshold(delta_t);
 }
@@ -407,75 +409,6 @@ void keyPressed() {
 	if (keyCode == 54) { // 6
 		println("Save");
 		saveVector_simple();
-	}
-}
-
-class Square {
-	color _c;
-	int _size;
-	int _index;
-	float _intensity;
-	boolean _state = true;
-	boolean _init_state = true;
-	boolean _stroke = false;
-	boolean _done = false;
-	PVector _loc;
-
-	Square (PVector loc, boolean state, int size, float intensity, int index) {
-		_init_state = state;
-		_state = state;
-		_loc = loc;
-		_size = size;
-		_intensity = intensity;
-		_index = index;
-	}
-
-	// Render the <Square> as a rectangle
-	void render() {
-		if (_state) {
-			_c = color(0); // Black (on)
-		} 
-		else {
-			_c = color(255); // White (off)
-		}
-
-		fill(_c);
-
-		if (_stroke) {	
-			stroke(0);
-			strokeWeight(1);
-		} 
-		else {
-			noStroke();
-		}
-		
-		rect(_loc.x, _loc.y, _size, _size);
-	}
-
-	// Might be useful for checking hover
-	void set_state(boolean state) {
-		_state = state;
-	}
-
-	// Useful for painting
-	void toggle_state() {
-		_state = !_state;
-	}
-
-	void reset_state() {
-		_state = _init_state;
-	}
-
-	void set_white() {
-		_state = false;
-	}
-
-	void set_black() {
-		_state = true;
-	}
-
-	void toggle_stroke() {
-		_stroke = !_stroke;
 	}
 }
 
